@@ -1,106 +1,99 @@
 import * as React from 'react'
 import { Text, Button, useToast } from '@chakra-ui/react'
 import { useState } from 'react'
-import { BrowserProvider, Contract, Eip1193Provider, parseEther } from 'ethers'
-import { useWeb3ModalProvider, useWeb3ModalAccount } from '@web3modal/ethers/react'
-import { ERC20_CONTRACT_ADDRESS, ERC20_CONTRACT_ABI } from '../utils/erc20'
+import { useWeb3ModalAccount } from '@web3modal/ethers/react'
 import { LinkComponent } from '../components/layout/LinkComponent'
-import { HeadingComponent } from '../components/layout/HeadingComponent'
-import { ethers } from 'ethers'
 import { Head } from '../components/layout/Head'
 import { SITE_NAME, SITE_DESCRIPTION } from '../utils/config'
-import Register from '../components/layout/Register'
-import Login from '../components/layout/Login'
+import axios from 'axios'
 
 export default function Home() {
   const [isLoading, setIsLoading] = useState<boolean>(false)
-  const [txLink, setTxLink] = useState<string>()
-  const [txHash, setTxHash] = useState<string>()
+  const [isLoadingDownload, setIsLoadingDownload] = useState<boolean>(false)
+  const [latestUpload, setLatestUpload] = useState<any>()
 
-  const { address, chainId, isConnected } = useWeb3ModalAccount()
-  const { walletProvider } = useWeb3ModalProvider()
-  const provider: Eip1193Provider | undefined = walletProvider
+  const { isConnected } = useWeb3ModalAccount()
   const toast = useToast()
 
-  const getBal = async () => {
-    if (isConnected) {
-      const ethersProvider = new BrowserProvider(provider as any)
-      const signer = await ethersProvider.getSigner()
-      const balance = await ethersProvider.getBalance(address as any)
-      const ethBalance = ethers.formatEther(balance)
-      if (ethBalance !== '0') {
-        return Number(ethBalance)
-      } else {
-        return 0
-      }
-    } else {
-      return 0
+  const upload = async () => {
+    try {
+      const fileContent = 'Hello world!'
+      const blob = new Blob([fileContent], { type: 'text/plain' })
+      const formData = new FormData()
+      formData.append('file', blob, 'hello-super.txt')
+
+      setIsLoading(true)
+
+      const response = await axios.post('http://localhost:3001/api/upload', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      })
+
+      const data = response.data
+      console.log('Upload response:', data.metadata)
+      setLatestUpload(JSON.stringify(data.metadata, null, 2))
+
+      setIsLoading(false)
+      toast({
+        title: 'File uploaded',
+        description: 'Your file has been uploaded successfully.',
+        status: 'success',
+        position: 'bottom',
+        variant: 'subtle',
+        duration: 9000,
+        isClosable: true,
+      })
+    } catch (e) {
+      setIsLoading(false)
+      console.log('error:', e)
+      toast({
+        title: 'Woops',
+        description: 'Something went wrong...',
+        status: 'error',
+        position: 'bottom',
+        variant: 'subtle',
+        duration: 9000,
+        isClosable: true,
+      })
     }
   }
 
-  const faucetTx = async () => {
-    const customProvider = new ethers.JsonRpcProvider(process.env.NEXT_PUBLIC_RPC_ENDPOINT_URL)
-    const pKey = process.env.NEXT_PUBLIC_SIGNER_PRIVATE_KEY || ''
-    const specialSigner = new ethers.Wallet(pKey, customProvider)
-    const tx = await specialSigner.sendTransaction({
-      to: address,
-      value: parseEther('0.0001'),
-    })
-    const receipt = await tx.wait(1)
-    return receipt
-  }
-
-  const doSomething = async () => {
+  const download = async () => {
     try {
-      if (!isConnected) {
-        toast({
-          title: 'Not connected yet',
-          description: 'Please connect your wallet, my friend.',
-          status: 'error',
-          position: 'bottom',
-          variant: 'subtle',
-          duration: 9000,
-          isClosable: true,
-        })
-        return
-      }
-      let signer
-      if (provider) {
-        setIsLoading(true)
-        setTxHash('')
-        setTxLink('')
-        const ethersProvider = new BrowserProvider(provider)
-        signer = await ethersProvider.getSigner()
+      setIsLoadingDownload(true)
 
-        ///// Send ETH if needed /////
-        const bal = await getBal()
-        console.log('bal:', bal)
-        if (bal < 0.0001) {
-          const faucet = await faucetTx()
-          console.log('faucet tx', faucet)
-        }
+      const filename = (await JSON.parse(latestUpload)).filename
+      console.log('filename:', filename)
 
-        ///// Call /////
-        const erc20 = new Contract(ERC20_CONTRACT_ADDRESS, ERC20_CONTRACT_ABI, signer)
-        const call = await erc20.mint(parseEther('10000'))
-        const receipt = await call.wait()
+      const response = await axios.get('/api/download', {
+        params: {
+          filename: filename,
+        },
+        responseType: 'blob',
+      })
 
-        console.log('tx:', receipt)
-        setTxHash(receipt.hash)
-        setTxLink('https://sepolia.etherscan.io/tx/' + receipt.hash)
-        setIsLoading(false)
-        toast({
-          title: 'Successful tx',
-          description: 'Well done! 🎉',
-          status: 'success',
-          position: 'bottom',
-          variant: 'subtle',
-          duration: 20000,
-          isClosable: true,
-        })
-      }
+      const url = window.URL.createObjectURL(new Blob([response.data]))
+      const a = document.createElement('a')
+      a.style.display = 'none'
+      a.href = url
+      a.download = 'sample.txt'
+      document.body.appendChild(a)
+      a.click()
+      window.URL.revokeObjectURL(url)
+
+      setIsLoadingDownload(false)
+      toast({
+        title: 'File downloaded',
+        description: 'Your file has been downloaded successfully.',
+        status: 'success',
+        position: 'bottom',
+        variant: 'subtle',
+        duration: 9000,
+        isClosable: true,
+      })
     } catch (e) {
-      setIsLoading(false)
+      setIsLoadingDownload(false)
       console.log('error:', e)
       toast({
         title: 'Woops',
@@ -118,29 +111,30 @@ export default function Home() {
     <>
       <Head title={SITE_NAME} description={SITE_DESCRIPTION} />
       <main>
-        {/* <Button
-          // mt={7}
+        <Button
+          mt={7}
           colorScheme="blue"
           variant="outline"
           type="submit"
-          onClick={doSomething}
+          onClick={upload}
           isLoading={isLoading}
-          loadingText="Minting..."
+          loadingText="Uploading..."
           spinnerPlacement="end">
-          Mint
-        </Button> */}
-        <div>
-          {/* <h1>WebAuthn Demo</h1> */}
-          <h2>Register</h2>
-          <Register />
-          <h2>Login</h2>
-          <Login />
-        </div>
-        {txHash && (
-          <Text py={4} fontSize="14px" color="#45a2f8">
-            <LinkComponent href={txLink ? txLink : ''}>{txHash}</LinkComponent>
-          </Text>
-        )}
+          Upload
+        </Button>
+        <Button
+          mt={7}
+          ml={5}
+          colorScheme="blue"
+          variant="outline"
+          type="submit"
+          onClick={download}
+          isLoading={isLoadingDownload}
+          loadingText="Downloading..."
+          spinnerPlacement="end">
+          Download
+        </Button>
+        {latestUpload && <Text mt={5}>{latestUpload}</Text>}
       </main>
     </>
   )
