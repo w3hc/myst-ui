@@ -1,26 +1,25 @@
 import * as React from 'react'
-import { Text, Button, useToast } from '@chakra-ui/react'
+import { Text, Button, useToast, FormControl, FormLabel, Input, Textarea } from '@chakra-ui/react'
 import { useState } from 'react'
-import { LinkComponent } from '../components/layout/LinkComponent'
+import { useRouter } from 'next/router'
 import { Head } from '../components/layout/Head'
 import { SITE_NAME, SITE_DESCRIPTION } from '../utils/config'
 import axios from 'axios'
-
-import { BrowserProvider, Contract, Eip1193Provider, parseEther } from 'ethers'
+import { BrowserProvider, Eip1193Provider } from 'ethers'
 import { useWeb3ModalProvider, useWeb3ModalAccount } from '@web3modal/ethers/react'
-import { ERC20_CONTRACT_ADDRESS, ERC20_CONTRACT_ABI } from '../utils/erc20'
-import { HeadingComponent } from '../components/layout/HeadingComponent'
-import { ethers } from 'ethers'
 
 export default function Home() {
   const [isLoading, setIsLoading] = useState<boolean>(false)
   const [isLoadingDownload, setIsLoadingDownload] = useState<boolean>(false)
-  const [latestUpload, setLatestUpload] = useState<any>('file-1721123051908-173684948.txt')
+  const [latestUpload, setLatestUpload] = useState<any>()
+  const [title, setTitle] = useState<string>('')
+  const [description, setDescription] = useState<string>('')
 
   const { address, chainId, isConnected } = useWeb3ModalAccount()
   const { walletProvider } = useWeb3ModalProvider()
   const provider: Eip1193Provider | undefined = walletProvider
   const toast = useToast()
+  const router = useRouter()
 
   const upload = async () => {
     try {
@@ -28,6 +27,8 @@ export default function Home() {
       const blob = new Blob([fileContent], { type: 'text/plain' })
       const formData = new FormData()
       formData.append('file', blob, 'hello-super.txt')
+      formData.append('title', title)
+      formData.append('description', description)
 
       setIsLoading(true)
 
@@ -51,6 +52,7 @@ export default function Home() {
         duration: 9000,
         isClosable: true,
       })
+      redirectToArtistAlpha()
     } catch (e) {
       setIsLoading(false)
       console.log('Upload error:', e)
@@ -66,79 +68,24 @@ export default function Home() {
     }
   }
 
-  const download = async () => {
-    try {
-      setIsLoadingDownload(true)
-
-      if (!isConnected) {
-        toast({
-          title: 'Connect wallet',
-          description: 'Please connect your wallet first.',
-          status: 'error',
-          position: 'bottom',
-          variant: 'subtle',
-          duration: 9000,
-          isClosable: true,
-        })
-        return
-      }
-
-      const ethersProvider = new BrowserProvider(provider as any)
-      const signer = await ethersProvider.getSigner()
-      console.log('signer address:', signer.address)
-
-      // const signature = await signer.signMessage('yo')
-      // console.log('signature:', signature)
-
-      const filename = (await JSON.parse(latestUpload)).filename
-      console.log('filename:', filename)
-
-      const response = await axios.get('/api/download', {
-        params: {
-          filename: filename,
-          userAddress: signer.address,
-        },
-        responseType: 'blob',
-      })
-
-      const url = window.URL.createObjectURL(new Blob([response.data]))
-      const a = document.createElement('a')
-      a.style.display = 'none'
-      a.href = url
-      a.download = 'sample.txt'
-      document.body.appendChild(a)
-      a.click()
-      window.URL.revokeObjectURL(url)
-
-      setIsLoadingDownload(false)
-      toast({
-        title: 'File downloaded',
-        description: 'Your file has been downloaded successfully.',
-        status: 'success',
-        position: 'bottom',
-        variant: 'subtle',
-        duration: 9000,
-        isClosable: true,
-      })
-    } catch (e) {
-      setIsLoadingDownload(false)
-      console.log('error:', e)
-      toast({
-        title: 'Woops',
-        description: 'Something went wrong...',
-        status: 'error',
-        position: 'bottom',
-        variant: 'subtle',
-        duration: 9000,
-        isClosable: true,
-      })
-    }
+  const redirectToArtistAlpha = () => {
+    router.push({
+      pathname: '/artistAlpha',
+    })
   }
 
   return (
     <>
       <Head title={SITE_NAME} description={SITE_DESCRIPTION} />
       <main>
+        <FormControl mt={5}>
+          <FormLabel>Title</FormLabel>
+          <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Enter title" />
+        </FormControl>
+        <FormControl mt={5}>
+          <FormLabel>Description</FormLabel>
+          <Textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Enter description" />
+        </FormControl>
         <Button
           mt={7}
           colorScheme="blue"
@@ -150,18 +97,18 @@ export default function Home() {
           spinnerPlacement="end">
           Upload
         </Button>
-        <Button
+        {/* <Button
           mt={7}
           ml={5}
           colorScheme="blue"
           variant="outline"
-          type="submit"
-          onClick={download}
+          type="button"
+          onClick={redirectToArtistAlpha}
           isLoading={isLoadingDownload}
-          loadingText="Downloading..."
+          loadingText="Redirecting..."
           spinnerPlacement="end">
           Download
-        </Button>
+        </Button> */}
         {latestUpload && <Text mt={5}>{latestUpload}</Text>}
       </main>
     </>
