@@ -67,7 +67,6 @@ export default function Home() {
   const redirectToArtistAlpha = () => {
     router.push({
       pathname: '/artistAlpha',
-      query: { latestUpload },
     })
   }
 
