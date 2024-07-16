@@ -25,9 +25,8 @@ export default function Home() {
     try {
       setIsLoadingDownload(true)
 
-      const { artist, latestUpload } = router.query
+      const { artist } = router.query
       console.log(`artistAlpha: ${artist}`)
-      console.log(`latestUpload: ${latestUpload}`)
 
       if (!isConnected) {
         toast({
@@ -48,13 +47,9 @@ export default function Home() {
       console.log('signer address:', signer.address)
       console.log('artist:', artist)
 
-      const filename = (await JSON.parse(latestUpload as string)).filename
-      console.log('filename:', filename)
-
       const response = await axios.get(`/api/download`, {
         params: {
           artist: artist,
-          filename: filename,
           userAddress: signer.address,
         },
         responseType: 'blob',
