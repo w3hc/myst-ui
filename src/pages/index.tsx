@@ -12,7 +12,7 @@ import { useWeb3ModalProvider, useWeb3ModalAccount } from '@web3modal/ethers/rea
 export default function Home() {
   const [isLoading, setIsLoading] = useState<boolean>(false)
   const [isLoadingDownload, setIsLoadingDownload] = useState<boolean>(false)
-  const [latestUpload, setLatestUpload] = useState<any>('file-1721123051908-173684948.txt')
+  const [latestUpload, setLatestUpload] = useState<any>()
 
   const { address, chainId, isConnected } = useWeb3ModalAccount()
   const { walletProvider } = useWeb3ModalProvider()

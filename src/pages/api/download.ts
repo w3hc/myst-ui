@@ -2,11 +2,10 @@ import type { NextApiRequest, NextApiResponse } from 'next'
 import fetch from 'node-fetch'
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  const { artist, filename, userAddress } = req.query
+  const { artist, userAddress } = req.query
 
   console.log('Download request received with parameters:')
   console.log(`Artist: ${artist}`)
-  console.log(`Filename: ${filename}`)
   console.log(`User Address: ${userAddress}`)
 
   if (!artist) {
@@ -15,15 +14,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return
   }
 
-  if (!filename) {
-    console.error('Error: Filename is required')
-    res.status(400).json({ error: 'Filename is required' })
-    return
-  }
-
   try {
-    console.log(`Fetching from NestJS API: ${process.env.NEXT_PUBLIC_NESTJS_API_URL}/file/download/${artist}/${filename}/${userAddress}`)
-    const response = await fetch(`${process.env.NEXT_PUBLIC_NESTJS_API_URL}/file/download/${artist}/${filename}/${userAddress}`, {
+    console.log(`Fetching from NestJS API: ${process.env.NEXT_PUBLIC_NESTJS_API_URL}/file/download/latest/${artist}/${userAddress}`)
+    const response = await fetch(`${process.env.NEXT_PUBLIC_NESTJS_API_URL}/file/download/latest/${artist}/${userAddress}`, {
       method: 'GET',
       headers: {
         'api-key': '1234',
@@ -39,7 +32,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return
     }
 
-    const buffer = await response.buffer()
+    const buffer = await response.arrayBuffer()
+    const contentDisposition = response.headers.get('Content-Disposition')
+    const filename = contentDisposition ? contentDisposition.split('filename=')[1] : null
     res.setHeader('Content-Disposition', `attachment; filename=${filename}`)
     res.setHeader('Content-Type', 'application/octet-stream')
     console.log('File fetched successfully, sending to client')
