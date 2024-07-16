@@ -2,28 +2,50 @@ import type { NextApiRequest, NextApiResponse } from 'next'
 import fetch from 'node-fetch'
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  const { filename, userAddress } = req.query
+  const { artist, filename, userAddress } = req.query
+
+  console.log('Download request received with parameters:')
+  console.log(`Artist: ${artist}`)
+  console.log(`Filename: ${filename}`)
+  console.log(`User Address: ${userAddress}`)
+
+  if (!artist) {
+    console.error('Error: Artist is required')
+    res.status(400).json({ error: 'Artist is required' })
+    return
+  }
 
   if (!filename) {
+    console.error('Error: Filename is required')
     res.status(400).json({ error: 'Filename is required' })
     return
   }
 
-  const response = await fetch(`${process.env.NEXT_PUBLIC_NESTJS_API_URL}/file/download/${filename}/${userAddress}`, {
-    method: 'GET',
-    headers: {
-      'api-key': '1234',
-    },
-  })
+  try {
+    console.log(`Fetching from NestJS API: ${process.env.NEXT_PUBLIC_NESTJS_API_URL}/file/download/${artist}/${filename}/${userAddress}`)
+    const response = await fetch(`${process.env.NEXT_PUBLIC_NESTJS_API_URL}/file/download/${artist}/${filename}/${userAddress}`, {
+      method: 'GET',
+      headers: {
+        'api-key': '1234',
+      },
+    })
 
-  if (response.status !== 200) {
-    const data = await response.json()
-    res.status(response.status).json(data)
-    return
+    console.log(`NestJS API response status: ${response.status}`)
+
+    if (response.status !== 200) {
+      const data = await response.json()
+      console.error('Error from NestJS API:', data)
+      res.status(response.status).json(data)
+      return
+    }
+
+    const buffer = await response.buffer()
+    res.setHeader('Content-Disposition', `attachment; filename=${filename}`)
+    res.setHeader('Content-Type', 'application/octet-stream')
+    console.log('File fetched successfully, sending to client')
+    res.status(200).send(buffer)
+  } catch (error) {
+    console.error('Error fetching file from NestJS API:', error)
+    res.status(500).json({ error: 'Internal Server Error' })
   }
-
-  const buffer = await response.buffer()
-  res.setHeader('Content-Disposition', `attachment; filename=${filename}`)
-  res.setHeader('Content-Type', 'application/octet-stream')
-  res.status(200).send(buffer)
 }
