@@ -163,12 +163,19 @@ export default function Home() {
         <Box mt={5}>
           <List spacing={3}>
             {filesMetadata.map((file, index) => (
-              <Box key={index} mt={5} border="2px" borderColor="#8c1c84" borderRadius="md" p={4}>
+              <Box
+                key={index}
+                mt={5}
+                border="2px"
+                borderColor="#8c1c84"
+                borderRadius="md"
+                p={4}
+                animation={index === 0 ? 'blink 10s ease-in-out' : 'none'}>
                 <Text fontSize="xl" fontWeight="bold">
-                  yo {file.title}
+                  {file.title}
                 </Text>
                 <Text fontSize="lg" mb={5}>
-                  desc {file.description}
+                  {file.description}
                 </Text>
                 <ListItem>
                   <ListIcon as={CheckCircleIcon} color="green.500" />
@@ -182,6 +189,17 @@ export default function Home() {
           </List>
         </Box>
       </main>
+      <style jsx>{`
+        @keyframes blink {
+          0%,
+          100% {
+            border-color: #8c1c84;
+          }
+          50% {
+            border-color: #45a2f8;
+          }
+        }
+      `}</style>
     </>
   )
 }

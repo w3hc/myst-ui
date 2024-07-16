@@ -1,5 +1,5 @@
 import * as React from 'react'
-import { Text, Button, useToast } from '@chakra-ui/react'
+import { Text, Button, useToast, FormControl, FormLabel, Input } from '@chakra-ui/react'
 import { useState } from 'react'
 import { useRouter } from 'next/router'
 import { Head } from '../components/layout/Head'
@@ -12,6 +12,8 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState<boolean>(false)
   const [isLoadingDownload, setIsLoadingDownload] = useState<boolean>(false)
   const [latestUpload, setLatestUpload] = useState<any>()
+  const [title, setTitle] = useState<string>('')
+  const [description, setDescription] = useState<string>('')
 
   const { address, chainId, isConnected } = useWeb3ModalAccount()
   const { walletProvider } = useWeb3ModalProvider()
@@ -25,6 +27,8 @@ export default function Home() {
       const blob = new Blob([fileContent], { type: 'text/plain' })
       const formData = new FormData()
       formData.append('file', blob, 'hello-super.txt')
+      formData.append('title', title)
+      formData.append('description', description)
 
       setIsLoading(true)
 
@@ -48,6 +52,7 @@ export default function Home() {
         duration: 9000,
         isClosable: true,
       })
+      redirectToArtistAlpha()
     } catch (e) {
       setIsLoading(false)
       console.log('Upload error:', e)
@@ -73,6 +78,14 @@ export default function Home() {
     <>
       <Head title={SITE_NAME} description={SITE_DESCRIPTION} />
       <main>
+        <FormControl mt={5}>
+          <FormLabel>Title</FormLabel>
+          <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Enter title" />
+        </FormControl>
+        <FormControl mt={5}>
+          <FormLabel>Description</FormLabel>
+          <Input value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Enter description" />
+        </FormControl>
         <Button
           mt={7}
           colorScheme="blue"
@@ -84,7 +97,7 @@ export default function Home() {
           spinnerPlacement="end">
           Upload
         </Button>
-        <Button
+        {/* <Button
           mt={7}
           ml={5}
           colorScheme="blue"
@@ -95,7 +108,7 @@ export default function Home() {
           loadingText="Redirecting..."
           spinnerPlacement="end">
           Download
-        </Button>
+        </Button> */}
         {latestUpload && <Text mt={5}>{latestUpload}</Text>}
       </main>
     </>
