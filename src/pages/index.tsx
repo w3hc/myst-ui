@@ -1,5 +1,5 @@
 import * as React from 'react'
-import { Text, Button, useToast, FormControl, FormLabel, Input } from '@chakra-ui/react'
+import { Text, Button, useToast, FormControl, FormLabel, Input, Textarea } from '@chakra-ui/react'
 import { useState } from 'react'
 import { useRouter } from 'next/router'
 import { Head } from '../components/layout/Head'
@@ -84,7 +84,7 @@ export default function Home() {
         </FormControl>
         <FormControl mt={5}>
           <FormLabel>Description</FormLabel>
-          <Input value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Enter description" />
+          <Textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Enter description" />
         </FormControl>
         <Button
           mt={7}
