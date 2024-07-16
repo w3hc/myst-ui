@@ -1,6 +1,6 @@
 import * as React from 'react'
 import { Text, Button, useToast, Box, List, ListItem, ListIcon } from '@chakra-ui/react'
-import { useState } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/router'
 import { Head } from '../components/layout/Head'
 import { SITE_NAME, SITE_DESCRIPTION } from '../utils/config'
@@ -12,6 +12,8 @@ import { CheckCircleIcon } from '@chakra-ui/icons'
 export default function Home() {
   const [isLoadingDownload, setIsLoadingDownload] = useState<boolean>(false)
   const [filesMetadata, setFilesMetadata] = useState<any[]>([])
+  const [title, setTitle] = useState<string>('')
+  const [description, setDescription] = useState<string>('')
 
   const { isConnected } = useWeb3ModalAccount()
   const { walletProvider } = useWeb3ModalProvider()
@@ -20,7 +22,7 @@ export default function Home() {
   const router = useRouter()
   const { artist } = router.query
 
-  const fetchFilesMetadata = async () => {
+  const fetchFilesMetadata = useCallback(async () => {
     try {
       setIsLoadingDownload(true)
 
@@ -53,31 +55,39 @@ export default function Home() {
       console.log('Download response:', response.data)
 
       setFilesMetadata(response.data.files)
+      setTitle(response.data.title)
+      setDescription(response.data.description)
 
       setIsLoadingDownload(false)
-      toast({
-        title: 'Files fetched',
-        description: 'Files metadata has been fetched successfully.',
-        status: 'success',
-        position: 'bottom',
-        variant: 'subtle',
-        duration: 9000,
-        isClosable: true,
-      })
+      // toast({
+      //   title: 'Files fetched',
+      //   description: 'Files metadata has been fetched successfully.',
+      //   status: 'success',
+      //   position: 'bottom',
+      //   variant: 'subtle',
+      //   duration: 3000,
+      //   isClosable: true,
+      // })
     } catch (e) {
       setIsLoadingDownload(false)
       console.log('Fetch files metadata error:', e)
-      toast({
-        title: 'Woops',
-        description: 'Something went wrong...',
-        status: 'error',
-        position: 'bottom',
-        variant: 'subtle',
-        duration: 9000,
-        isClosable: true,
-      })
+      // toast({
+      //   title: 'Woops',
+      //   description: 'Something went wrong...',
+      //   status: 'error',
+      //   position: 'bottom',
+      //   variant: 'subtle',
+      //   duration: 9000,
+      //   isClosable: true,
+      // })
     }
-  }
+  }, [artist, isConnected, provider, toast])
+
+  useEffect(() => {
+    if (isConnected) {
+      fetchFilesMetadata()
+    }
+  }, [isConnected, fetchFilesMetadata])
 
   const downloadLatestFile = async () => {
     try {
@@ -142,29 +152,32 @@ export default function Home() {
     <>
       <Head title={SITE_NAME} description={SITE_DESCRIPTION} />
       <main>
-        <Button
-          mt={7}
-          ml={5}
-          colorScheme="blue"
-          variant="outline"
-          type="button"
-          onClick={fetchFilesMetadata}
-          isLoading={isLoadingDownload}
-          loadingText="Fetching..."
-          spinnerPlacement="end">
-          Fetch Files
-        </Button>
-        <Button mt={7} ml={5} colorScheme="blue" variant="outline" type="button" onClick={downloadLatestFile}>
-          Download Latest File
-        </Button>
         <Box mt={5}>
-          <Text fontSize="xl">Files Metadata</Text>
+          <Text fontSize="2xl" fontWeight="bold">
+            {title}
+          </Text>
+          <Text fontSize="lg" mb={5}>
+            {description}
+          </Text>
+        </Box>
+        <Box mt={5}>
           <List spacing={3}>
             {filesMetadata.map((file, index) => (
-              <ListItem key={index}>
-                <ListIcon as={CheckCircleIcon} color="green.500" />
-                {file.originalname} - {file.mimetype} - {file.size} bytes - Uploaded on {new Date(file.uploadDate).toLocaleString()}
-              </ListItem>
+              <Box key={index} mt={5} border="2px" borderColor="#8c1c84" borderRadius="md" p={4}>
+                <Text fontSize="xl" fontWeight="bold">
+                  yo {file.title}
+                </Text>
+                <Text fontSize="lg" mb={5}>
+                  desc {file.description}
+                </Text>
+                <ListItem>
+                  <ListIcon as={CheckCircleIcon} color="green.500" />
+                  <strong>{file.originalname}</strong> uploaded on {new Date(file.uploadDate).toLocaleString()}
+                </ListItem>
+                <Button mt={7} colorScheme="blue" variant="outline" type="button" onClick={downloadLatestFile}>
+                  Download
+                </Button>
+              </Box>
             ))}
           </List>
         </Box>
