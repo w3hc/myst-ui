@@ -20,7 +20,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    // Fetch all files for the artist
     console.log(`Fetching from NestJS API: ${process.env.NEXT_PUBLIC_NESTJS_API_URL}/file/files/${artist}`)
     const filesResponse = await fetch(`${process.env.NEXT_PUBLIC_NESTJS_API_URL}/file/files/${artist}`, {
       method: 'GET',
@@ -41,7 +40,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const filesData = await filesResponse.json()
     console.log(`Files data: ${JSON.stringify(filesData)}`)
 
-    // Fetch the latest file for the artist and user address
     console.log(`Fetching from NestJS API: ${process.env.NEXT_PUBLIC_NESTJS_API_URL}/file/download/latest/${artist}/${userAddress}`)
     const latestFileResponse = await fetch(`${process.env.NEXT_PUBLIC_NESTJS_API_URL}/file/download/latest/${artist}/${userAddress}`, {
       method: 'GET',
@@ -62,7 +60,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const latestFileData = await latestFileResponse.json()
     console.log(`Latest file data: ${JSON.stringify(latestFileData)}`)
 
-    // Combine the results and send the response
     const responseData = {
       files: filesData,
       latestFile: latestFileData,
