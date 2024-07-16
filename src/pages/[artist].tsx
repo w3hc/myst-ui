@@ -9,9 +9,24 @@ import { BrowserProvider, Eip1193Provider } from 'ethers'
 import { useWeb3ModalProvider, useWeb3ModalAccount } from '@web3modal/ethers/react'
 import { CheckCircleIcon } from '@chakra-ui/icons'
 
+interface FileMetadata {
+  title: string
+  description: string
+  originalname: string
+  mimetype: string
+  size: number
+  uploadDate: string
+}
+
+interface ApiResponse {
+  files: FileMetadata[]
+  title: string
+  description: string
+}
+
 export default function Home() {
   const [isLoadingDownload, setIsLoadingDownload] = useState<boolean>(false)
-  const [filesMetadata, setFilesMetadata] = useState<any[]>([])
+  const [filesMetadata, setFilesMetadata] = useState<FileMetadata[]>([])
   const [title, setTitle] = useState<string>('')
   const [description, setDescription] = useState<string>('')
 
@@ -44,7 +59,7 @@ export default function Home() {
       const signer = await ethersProvider.getSigner()
       console.log('signer address:', signer.address)
 
-      const response = await axios.get(`/api/download`, {
+      const response = await axios.get<ApiResponse>(`/api/download`, {
         params: {
           artist: artist,
           userAddress: signer.address,
@@ -54,7 +69,10 @@ export default function Home() {
 
       console.log('Download response:', response.data)
 
-      setFilesMetadata(response.data.files)
+      // Sort files by uploadDate in descending order
+      const sortedFiles = response.data.files.sort((a, b) => new Date(b.uploadDate).getTime() - new Date(a.uploadDate).getTime())
+
+      setFilesMetadata(sortedFiles)
       setTitle(response.data.title)
       setDescription(response.data.description)
 
